@@ -29,12 +29,15 @@ struct chunk_t
     unsigned long size;  //Chunk data bytes
 };
 
-void WavReader(const char* fileName, const char* fileToSave)
+void WavReader(const char* fileName, const char* fileToSave,int n)
 {
+    /*
+        READ DATA FROM FILE
+    */
     FILE* fin = fopen(fileName, "rb");
-    wav_header_t header;
+    wav_header_t header,newHeader;
     fread(&header, sizeof(header), 1, fin);
-    chunk_t chunk;
+    chunk_t chunk,newChunk;
     while (true)
     {
         fread(&chunk, sizeof(chunk), 1, fin);
@@ -52,21 +55,45 @@ void WavReader(const char* fileName, const char* fileToSave)
     for (int i = 0; i < samples_count; i++)
     {
         fread(&value[i], sample_size, 1, fin);
+        int t = value[i];
     }
+
+
     cout << sizeof(value);
+    /*
+        RESIZE FILE
+    */
+    newHeader = header;
+    newChunk = chunk;
+    newChunk.size = chunk.size * n;
+    newHeader.chunkSize += (newChunk.size - chunk.size);
+    short int* newList = new short int[samples_count * n];
+    memset(newList, 0, sizeof(short int) * samples_count * n);
+    for (int i = 0; i < samples_count; i += 1) {
+        for (int j = 0; j < n; j += 1) {
+            newList[n*i + j] = value[i];
+            int t = newList[n * i + j];
+        }
+            
+        
+    }
+    newChunk.size = chunk.size * n;
     FILE* fout = fopen(fileToSave, "wb");
-    fwrite(&header, sizeof(header), 1, fout);
-    for (int i = 0; i < samples_count; i++)
+    fwrite(&newHeader, sizeof(newHeader), 1, fout);
+    fwrite(&newChunk, sizeof(newChunk), 1, fout);
+    for (int i = 0; i < samples_count*n; i++)
     {
-        fwrite(&value[i], sample_size, 1, fout);
-      //  fprintf(fout, "%d\n", value[i]);
+        fwrite(&newList[i], sample_size, 1, fout);
     }
     fclose(fin);
     fclose(fout);
 }
 
+/*
+    MAIN PART OF PROGRAM WITH INPUT
+*/
 int main()
 {
-    WavReader("input.wav", "out.wav");
+    WavReader("input.wav", "out.wav",2);
     return 0;
 }
